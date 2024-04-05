@@ -26,6 +26,7 @@ Run the `DebtCollector.NET` project and it will output two CSV files:
 * `xray.csv`: A list of all methods from the first file in the previous list sorted by most committed
 
 For example running this on the [`TwitchEverywhere`](https://github.com/pureooze/TwitchEverywhere) code we get an output like this:
+
 ![TwitchEverywhere-commit-count-per-file-cs.webp](DebtCollector.NET/assets/TwitchEverywhere-commit-count-per-file-cs.webp)
 
 Notice the outlier? It has almost double the commits as each of the other files!
