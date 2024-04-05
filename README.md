@@ -6,7 +6,7 @@ The goal is to help prioritize work, so instead of trying to focus on `1000000` 
 The tool leverages `LibGit2Sharp` and `Roslyn` to perform analysis on C# code in a git repo and was inspired by Adam Tornhills talk [Prioritizing Technical Debt as If Time & Money Matters](https://www.youtube.com/watch?v=w9YhmMPLQ4U).
 
 ## How To Use It
-Create an `appsettings.json` file with a `PathToRepo` property, for example:
+Create an `appsettings.json` file in the `DebtCollector.NET` directory with a `PathToRepo` property, for example:
 ```json
 {
     "Logging": {
