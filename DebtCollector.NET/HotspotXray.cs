@@ -7,11 +7,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace DebtCollector.NET;
 
 public abstract class HotspotXray {
-
+    
     public static bool TryGetXray(
         string pathToRepo,
         string filePath,
-        out Dictionary<string, long> methodChangeCount
+        out Dictionary<string, long> methodChangeCount,
+        int daysSince = 1
     ) {
         methodChangeCount = [];
         if( string.IsNullOrEmpty( pathToRepo ) ) {
@@ -26,6 +27,7 @@ public abstract class HotspotXray {
         bool gotCommits = TryGetCommitShas(
             repo: repo,
             filePath: filePath,
+            daysSince: 1,
             commits: out List<Commit> commits
         );
 
@@ -38,6 +40,10 @@ public abstract class HotspotXray {
             TreeEntry? oldContent = commits[i][filePath];
             TreeEntry? newContent = commits[i + 1][filePath];
 
+            if (oldContent == null || newContent == null) {
+                continue;
+            }
+            
             Blob? oldContentBlob = oldContent.Target as Blob;
             Blob? newContentBlob = newContent.Target as Blob;
 
@@ -60,10 +66,10 @@ public abstract class HotspotXray {
             );
             
             foreach (string method in rawChanges) {
-                if (methodChangeCount.ContainsKey(method)) {
-                    methodChangeCount[method]++;
+                if (methodChangeCount.ContainsKey($"{filePath}.{method}")) {
+                    methodChangeCount[$"{filePath}.{method}"] += 1;
                 } else {
-                    methodChangeCount[method] = 1;
+                    methodChangeCount[$"{filePath}.{method}"] = 1;
                 }
             }
         }
@@ -74,14 +80,15 @@ public abstract class HotspotXray {
     private static bool TryGetCommitShas(
         Repository repo,
         string filePath,
-        out List<Commit> commits
+        out List<Commit> commits,
+        int daysSince = 1
     ) {
         commits = [];
 
-        DateTimeOffset since = DateTimeOffset.Now.AddYears( -1 );
+        DateTimeOffset since = DateTimeOffset.Now.AddDays( daysSince * -1 );
 
         CommitFilter filter = new() {
-            IncludeReachableFrom = repo.Branches["main"],
+            IncludeReachableFrom = repo.Branches.First(),
         };
 
         foreach (Commit? commit in repo.Commits.QueryBy( filter )) {
