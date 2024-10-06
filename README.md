@@ -16,7 +16,8 @@ Create an `appsettings.json` file in the `DebtCollector.NET` directory with a `P
             "Microsoft": "Information"
         }
     },
-    "PathToRepo": "C:\\My\\Code\\Projects\\TwitchEverywhere"
+    "PathToRepo": "C:\\My\\Code\\Projects\\TwitchEverywhere",
+    "GroupDepth": 1
 }
 ```
 
@@ -36,3 +37,25 @@ To get more details on why that might be, we can look at the Xray results and se
 
 Now its clear that the `MessageCallback` method is something that developers work with extremely often!
 So we can focus on that when looking to do refactors. 🎉
+
+## Path Grouping
+`DebtCollector.NET` can also group paths to a certain depth through the `GroupDepth` setting.
+For example if we have the following paths:
+```json
+[
+    { "path": "first/first/path/to/file1", "count": 10 },
+    { "path": "first/first/path/to/file2", "count": 2 },
+    { "path": "first/second/path/to/file3", "count": 50 },
+    { "path": "first/second/path/to/file4", "count": 4 },
+    { "path": "first/third/path/to/file5", "count": 9 }
+]
+```
+
+And we set `GroupDepth` to `1`, we will get the following output:
+```json
+[
+  { "path": "first", "count": 75 }
+]
+```
+
+If no `GroupDepth` is set, the output will be the same as the full paths list.
