@@ -4,7 +4,7 @@ namespace DebtCollector.NET;
 
 public abstract class HotspotFinder {
 
-    public static IOrderedEnumerable<KeyValuePair<string,int>> GetMostCommittedFiles( 
+    public static Dictionary<string,int> GetMostCommittedFiles( 
         string pathToRepo 
     ) {
 
@@ -35,6 +35,6 @@ public abstract class HotspotFinder {
             }
         }
         
-        return fileCommitCounts.OrderByDescending( x => x.Value );
+        return fileCommitCounts.OrderByDescending( x => x.Value ).ToDictionary();
     }
 }
