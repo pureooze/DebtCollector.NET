@@ -9,10 +9,12 @@ IConfigurationBuilder builder = new ConfigurationBuilder()
 
 IConfigurationRoot config = builder.Build();
 string? repoPath = config["PathToRepo"];
+string? groupDepth = config["GroupDepth"];
+int groupingDepth = groupDepth == null ? 1 : int.Parse( groupDepth );
 
 if( string.IsNullOrEmpty( repoPath ) ) {
     Console.WriteLine( "No repo path found in appsettings.json" );
     return;
 }
 
-DebtCollector.NET.DebtCollector.GenerateDebtReports( repoPath );
+DebtCollector.NET.DebtCollector.GenerateDebtReports( repoPath, groupingDepth );
