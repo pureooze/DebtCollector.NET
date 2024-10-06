@@ -81,7 +81,7 @@ public abstract class HotspotXray {
         DateTimeOffset since = DateTimeOffset.Now.AddYears( -1 );
 
         CommitFilter filter = new() {
-            IncludeReachableFrom = repo.Branches["master"],
+            IncludeReachableFrom = repo.Branches["main"],
         };
 
         foreach (Commit? commit in repo.Commits.QueryBy( filter )) {
