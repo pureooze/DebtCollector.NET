@@ -30,25 +30,25 @@ public abstract class DebtCollector {
         foreach (KeyValuePair<string,int> grouping in groupChangeCount) {
             pathGroupingFilesWriter.WriteLine( $"{grouping.Key}, {grouping.Value}" );
         }
-        //
-        // string mostCommittedFile = mostCommittedResult.First().Key;
-        // bool xrayResult = HotspotXray.TryGetXray(
-        //     repoPath, 
-        //     mostCommittedFile,
-        //     out Dictionary<string, long> methodChanges
-        // );
-        //
-        // if( !xrayResult ) {
-        //     Console.Error.WriteLine( "Xray failed" );
-        //     return;
-        // }
-        //
-        // IEnumerable<KeyValuePair<string, long>> methodChangesFromMostToLeast = methodChanges.OrderBy( m => m.Value ).Reverse();
-        // const string xrayFileName = @"xray.csv";
-        // using StreamWriter xrayWriter = new(xrayFileName);
-        // xrayWriter.WriteLine( $"Key, Value" );
-        // foreach (KeyValuePair<string, long> methodChange in methodChangesFromMostToLeast) {
-        //     xrayWriter.WriteLine( $"{methodChange.Key}, {methodChange.Value}" );
-        // }
+        
+        string mostCommittedFile = mostCommittedResult.First().Key;
+        bool xrayResult = HotspotXray.TryGetXray(
+            repoPath, 
+            mostCommittedFile,
+            out Dictionary<string, long> methodChanges
+        );
+        
+        if( !xrayResult ) {
+            Console.Error.WriteLine( "Xray failed" );
+            return;
+        }
+        
+        IEnumerable<KeyValuePair<string, long>> methodChangesFromMostToLeast = methodChanges.OrderBy( m => m.Value ).Reverse();
+        const string xrayFileName = @"xray.csv";
+        using StreamWriter xrayWriter = new(xrayFileName);
+        xrayWriter.WriteLine( $"Key, Value" );
+        foreach (KeyValuePair<string, long> methodChange in methodChangesFromMostToLeast) {
+            xrayWriter.WriteLine( $"{methodChange.Key}, {methodChange.Value}" );
+        }
     }
 }
