@@ -1,0 +1,4 @@
+﻿<Solution>
+  <Project Path="DebtCollector.Net.UnitTests\DebtCollector.Net.UnitTests.csproj" Type="Classic C#" />
+  <Project Path="DebtCollector.NET\DebtCollector.NET.csproj" Type="Classic C#" />
+</Solution>
