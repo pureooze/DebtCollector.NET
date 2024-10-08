@@ -1,8 +1,9 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace DebtCollector.NET;
 
 public abstract class PathGrouper {
+
     public static Dictionary<string, int> GetGroupedPaths(
         int depth,
         Dictionary<string,int> mostCommittedResult
