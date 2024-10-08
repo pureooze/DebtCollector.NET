@@ -11,10 +11,6 @@ public class DebtCollector(
         int groupingDepth,
         int daysSince = 1
     ) {
-        if (!modes.Contains("hotspot")) {
-            Console.WriteLine("hotspot mode not found in appsettings.json");
-            return;
-        }
         
         Dictionary<string,int> mostCommittedResult = GenerateFileHotspotReport(
             repoPath, 

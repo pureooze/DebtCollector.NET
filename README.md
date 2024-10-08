@@ -28,8 +28,9 @@ Create an `appsettings.json` file in the `DebtCollector.NET` directory with a `P
 |--------------|------------------------------------------------------|-------------------------------------------|
 | `PathToRepo` | The path to the git repo you want to analyze         | Any valid `string` path on the filesystem |
 | `DaysSince`  | The number of days since the last commit to consider | Any valid `int`                           |
-| `Modes`      | The analysis modes to run                            | `hotspot`, `xray`                         |
+| `Modes`      | The analysis modes to run                            | `xray`, `hotspotGrouped`                  |
 | `GitClient`  | The git client to use                                | `cli`, `libgit2sharp`                     |
+| `GroupDepth` | The depth to group paths to                          | Any valid `int`                           |
 
 Run the `DebtCollector.NET` project and it will output two CSV files:
 * `mostCommittedFiles.csv`: A list of files sorted by most committed
