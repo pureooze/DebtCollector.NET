@@ -16,10 +16,19 @@ Create an `appsettings.json` file in the `DebtCollector.NET` directory with a `P
             "Microsoft": "Information"
         }
     },
-    "PathToRepo": "C:\\My\\Code\\Projects\\TwitchEverywhere"
+    "PathToRepo": "C:\\My\\Code\\Projects\\TwitchEverywhere",
+    "DaysSince": 365,
+    "Modes": ["hotspot"],
+    "GitClient": "cli"
 }
 ```
 
+| Field        | Description                                          | Valid Values                              |
+|--------------|------------------------------------------------------|-------------------------------------------|
+| `PathToRepo` | The path to the git repo you want to analyze         | Any valid `string` path on the filesystem |
+| `DaysSince`  | The number of days since the last commit to consider | Any valid `int`                           |
+| `Modes`      | The analysis modes to run                            | `hotspot`, `xray`                         |
+| `GitClient`  | The git client to use                                | `cli`, `libgit2sharp`                     |
 
 Run the `DebtCollector.NET` project and it will output two CSV files:
 * `mostCommittedFiles.csv`: A list of files sorted by most committed
@@ -34,5 +43,5 @@ To get more details on why that might be, we can look at the Xray results and se
 
 ![TwitchEverywhere-commit-count-per-file-cs.webp](DebtCollector.NET/assets/TwitchEverywhere-commit-count-per-method.webp)
 
-Now its clear that the `MessageCallback` method is something that developers work with extremely often!
+Now it's clear that the `MessageCallback` method is something that developers work with extremely often!
 So we can focus on that when looking to do refactors. 🎉

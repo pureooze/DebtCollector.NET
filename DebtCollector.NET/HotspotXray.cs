@@ -27,7 +27,7 @@ public abstract class HotspotXray {
         bool gotCommits = TryGetCommitShas(
             repo: repo,
             filePath: filePath,
-            daysSince: 1,
+            daysSince: daysSince,
             commits: out List<Commit> commits
         );
 
@@ -61,6 +61,7 @@ public abstract class HotspotXray {
             SyntaxTree newContentTree = CSharpSyntaxTree.ParseText( newContentStream.ReadToEnd() );
 
             IEnumerable<string> rawChanges = GetDetailedChanges(
+                filePath,
                 oldContentTree,
                 newContentTree
             );
@@ -91,8 +92,10 @@ public abstract class HotspotXray {
             IncludeReachableFrom = repo.Branches.First(),
         };
 
+        int i = 0;
         foreach (Commit? commit in repo.Commits.QueryBy( filter )) {
 
+            i++;
             TreeChanges? changes = repo.Diff.Compare<TreeChanges>(
                 commit.Parents.FirstOrDefault()?.Tree,
                 commit.Tree
@@ -102,7 +105,11 @@ public abstract class HotspotXray {
                 c => c.Path.Equals( filePath, StringComparison.OrdinalIgnoreCase )
             );
 
-            if( change == null || commit.Author.When < since ) {
+            if (commit.Author.When < since) {
+                break;
+            }
+            
+            if( change == null ) {
                 continue;
             }
 
@@ -113,14 +120,15 @@ public abstract class HotspotXray {
     }
 
     private static IEnumerable<string> GetDetailedChanges(
+        string filePath,
         SyntaxTree oldTree,
         SyntaxTree newTree
     ) {
-        var oldRoot = oldTree.GetRoot();
-        var newRoot = newTree.GetRoot();
+        SyntaxNode oldRoot = oldTree.GetRoot();
+        SyntaxNode newRoot = newTree.GetRoot();
 
-        var oldMethods = oldRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().ToDictionary( m => m.Identifier.ValueText + m.ParameterList, m => m.ToString() );
-        var newMethods = newRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().ToDictionary( m => m.Identifier.ValueText + m.ParameterList, m => m.ToString() );
+        var oldMethods = oldRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().ToDictionary( m => filePath + GetNodeIdentifier(m), m => m.ToString() );
+        var newMethods = newRoot.DescendantNodes().OfType<MethodDeclarationSyntax>().ToDictionary( m => filePath + GetNodeIdentifier(m), m => m.ToString() );
 
         var allMethodKeys = oldMethods.Keys.Union( newMethods.Keys ).Distinct();
 
@@ -136,5 +144,41 @@ public abstract class HotspotXray {
         }
 
         return changedMethods.Distinct();
+    }
+
+    private static string GetNodeIdentifier(MethodDeclarationSyntax method) {
+        // return GetParentClassName(m) + "." + m.Identifier.ValueText + "." + m.ParameterList;
+        var namespaceDecl = method.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
+        var namespaceName = namespaceDecl != null ? namespaceDecl.Name.ToString() : "<Global>";
+        var classHierarchy = method.Ancestors().OfType<ClassDeclarationSyntax>()
+            .Select(c => c.Identifier.Text)
+            .Reverse() // To start from the outermost class
+            .ToList();
+        var fullClassName = string.Join(".", classHierarchy);
+        var parameters = string.Join(", ", method.ParameterList.Parameters.Select(p => p.Type.ToString()));
+        var filePath = method.SyntaxTree.FilePath.Replace("\\", "/");
+        var methodBody = method.Body?.ToString() ?? method.ExpressionBody?.ToString();
+        var hash = string.IsNullOrEmpty(methodBody) ? "" : Convert.ToBase64String(System.Security.Cryptography.SHA256.Create().ComputeHash(System.Text.Encoding.UTF8.GetBytes(methodBody)));
+
+        return $"{filePath}:{namespaceName}.{fullClassName}.{method.Identifier.Text}({parameters})-{hash}";
+    }
+
+    public static string GetParentClassName(MethodDeclarationSyntax methodSyntax) {
+        // Traverse up the syntax tree to find the ClassDeclarationSyntax
+        var classDeclaration = methodSyntax.Parent;
+        while (classDeclaration != null && !(classDeclaration is ClassDeclarationSyntax))
+        {
+            classDeclaration = classDeclaration.Parent;
+        }
+
+        // Check if a ClassDeclarationSyntax was found
+        if (classDeclaration is ClassDeclarationSyntax classSyntax)
+        {
+            // Return the name of the class
+            return classSyntax.Identifier.Text;
+        }
+
+        // Return null or throw an exception if no parent class is found
+        return null;
     }
 }

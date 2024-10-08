@@ -13,7 +13,7 @@ namespace DebtCollector.NET {
             methodComplexity = [];
 
             Repository repo = new(repoPath);
-            Commands.Checkout(repo, "master");
+            Commands.Checkout(repo, "main");
 
             // Full path to the file
             string fullFilePath = $"{repoPath}\\{filePath}";
