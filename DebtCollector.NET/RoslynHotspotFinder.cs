@@ -4,7 +4,7 @@ using LibGit2Sharp;
 namespace DebtCollector.NET;
 
 public class RoslynHotspotFinder : IHotspotFinder {
-    IEnumerable<KeyValuePair<string,int>> IHotspotFinder.GetMostCommittedFiles( 
+    Dictionary<string,int> IHotspotFinder.GetMostCommittedFiles( 
         string pathToRepo,
         int daysSince
     ) {
@@ -49,6 +49,8 @@ public class RoslynHotspotFinder : IHotspotFinder {
             }
         }
         
-        return fileCommitCounts.OrderByDescending( x => x.Value );
+        return fileCommitCounts
+            .OrderByDescending( x => x.Value )
+            .ToDictionary();
     }
 }

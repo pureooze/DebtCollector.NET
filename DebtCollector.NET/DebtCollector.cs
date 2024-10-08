@@ -8,6 +8,7 @@ public class DebtCollector(
     public void GenerateDebtReports(
         string repoPath,
         string[] modes,
+        int groupingDepth,
         int daysSince = 1
     ) {
         if (!modes.Contains("hotspot")) {
@@ -15,10 +16,17 @@ public class DebtCollector(
             return;
         }
         
-        IList<KeyValuePair<string, int>> mostCommittedResult = GenerateFileHotspotReport(
+        Dictionary<string,int> mostCommittedResult = GenerateFileHotspotReport(
             repoPath, 
             daysSince
         );
+
+        if (modes.Contains("hotspotGrouped")) {
+            GenerateGroupedHotspotPathsReport(
+                groupingDepth,
+                mostCommittedResult
+            );
+        }
         
         if (modes.Contains("MethodXray")) {
             GenerateMethodXrayReport(
@@ -38,9 +46,27 @@ public class DebtCollector(
         Console.WriteLine("Debt reports generated");
     }
 
+    private void GenerateGroupedHotspotPathsReport(
+        int groupingDepth,
+        Dictionary<string, int> mostCommittedResult
+    ) {
+        Dictionary<string, int> groupChangeCount = PathGrouper.GetGroupedPaths(
+            depth: groupingDepth, 
+            mostCommittedResult: mostCommittedResult
+        );
+        
+        const string pathGroupingFilesFileName = @"pathGrouping.csv";
+        using StreamWriter pathGroupingFilesWriter = new(pathGroupingFilesFileName);
+
+        pathGroupingFilesWriter.WriteLine( $"Key, Value" );
+        foreach (KeyValuePair<string,int> grouping in groupChangeCount) {
+            pathGroupingFilesWriter.WriteLine( $"{grouping.Key}, {grouping.Value}" );
+        }
+    }
+
     private void GenerateComplexityReport(
         string repoPath, 
-        IList<KeyValuePair<string, int>> mostCommittedResult 
+        Dictionary<string, int> mostCommittedResult 
     ) {
         Console.WriteLine("Getting complexity");
         IEnumerable<KeyValuePair<string, long>> methodComplexityFromAllHotspotFiles = [];
@@ -73,7 +99,7 @@ public class DebtCollector(
 
     private void GenerateMethodXrayReport(
         string repoPath,
-        IList<KeyValuePair<string, int>> mostCommittedResult,
+        Dictionary<string, int> mostCommittedResult,
         int daysSince = 1
     ) {
         Console.WriteLine("Getting xray hotspots");
@@ -109,15 +135,15 @@ public class DebtCollector(
         }
     }
 
-    private IList<KeyValuePair<string, int>> GenerateFileHotspotReport(
+    private Dictionary<string, int> GenerateFileHotspotReport(
         string repoPath,
         int daysSince = 1
     ) {
         Console.WriteLine("Getting hotspots");
-        IList<KeyValuePair<string, int>> mostCommittedResult = hotspotFinder.GetMostCommittedFiles(
+        Dictionary<string, int> mostCommittedResult = hotspotFinder.GetMostCommittedFiles(
             repoPath,
             daysSince: daysSince
-        ).ToList();
+        );
 
         string mostCommittedFilesFileName = @"mostCommittedFiles.csv";
         using StreamWriter mostCommittedFilesWriter = new(mostCommittedFilesFileName);

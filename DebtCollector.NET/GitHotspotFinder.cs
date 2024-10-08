@@ -3,7 +3,7 @@ using DebtCollector.NET.Interfaces;
 
 namespace DebtCollector.NET {
     public class GitHotspotFinder : IHotspotFinder {
-        IEnumerable<KeyValuePair<string, int>> IHotspotFinder.GetMostCommittedFiles(
+        Dictionary<string,int> IHotspotFinder.GetMostCommittedFiles(
             string pathToRepo,
             int daysSince
         ) {
@@ -12,7 +12,7 @@ namespace DebtCollector.NET {
                 .GroupBy(group => group)
                 .Select( group => new KeyValuePair<string, int>( group.Key, group.Count() ) )
                 .OrderByDescending( x => x.Value )
-                .ToList();;
+                .ToDictionary();
         }
 
         private IEnumerable<string> GetCommitShas(

@@ -15,6 +15,8 @@ string? repoPath = config[key: "PathToRepo"];
 int daysSince = Int32.Parse(config[key: "DaysSince"] ?? string.Empty);
 string[] modes = config.GetSection("Modes").Get<string[]>() ?? [];
 string gitClient = config[key: "GitClient"] ?? "libgit2sharp";
+string? groupDepth = config["GroupDepth"];
+int groupingDepth = groupDepth == null ? 1 : int.Parse( groupDepth );
 
 if (string.IsNullOrEmpty(value: repoPath)) {
     Console.WriteLine(value: "No repo path found in appsettings.json");
@@ -47,5 +49,6 @@ DebtCollector.NET.DebtCollector debtCollector = new(
 debtCollector.GenerateDebtReports(
     repoPath: repoPath, 
     modes: modes,
+    groupingDepth: groupingDepth,
     daysSince: daysSince
 );
