@@ -34,6 +34,6 @@ public abstract class PathGrouper {
     }
 
     private static string GetSeparator() {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"\" : "/";
+        return "/";
     }
 }

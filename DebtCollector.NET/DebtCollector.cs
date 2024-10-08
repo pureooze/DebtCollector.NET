@@ -1,23 +1,55 @@
-﻿namespace DebtCollector.NET;
+﻿using DebtCollector.NET.Interfaces;
 
-public abstract class DebtCollector {
+namespace DebtCollector.NET;
 
-    public static void GenerateDebtReports( 
+public class DebtCollector(
+    IHotspotFinder hotspotFinder
+) {
+    public void GenerateDebtReports(
         string repoPath,
-        int groupingDepth
+        string[] modes,
+        int groupingDepth,
+        int daysSince = 1
     ) {
-        Dictionary<string,int> mostCommittedResult = HotspotFinder.GetMostCommittedFiles(
-            repoPath
+        if (!modes.Contains("hotspot")) {
+            Console.WriteLine("hotspot mode not found in appsettings.json");
+            return;
+        }
+        
+        Dictionary<string,int> mostCommittedResult = GenerateFileHotspotReport(
+            repoPath, 
+            daysSince
         );
 
-        const string mostCommittedFilesFileName = @"mostCommittedFiles.csv";
-        using StreamWriter mostCommittedFilesWriter = new(mostCommittedFilesFileName);
-
-        mostCommittedFilesWriter.WriteLine( $"Key, Value" );
-        foreach (KeyValuePair<string,int> fileCommitCountEntry in mostCommittedResult) {
-            mostCommittedFilesWriter.WriteLine( $"{fileCommitCountEntry.Key}, {fileCommitCountEntry.Value}" );
+        if (modes.Contains("hotspotGrouped")) {
+            GenerateGroupedHotspotPathsReport(
+                groupingDepth,
+                mostCommittedResult
+            );
+        }
+        
+        if (modes.Contains("MethodXray")) {
+            GenerateMethodXrayReport(
+                repoPath, 
+                mostCommittedResult, 
+                daysSince
+            );
         }
 
+        if (modes.Contains("Complexity")) {
+            GenerateComplexityReport(
+                repoPath, 
+                mostCommittedResult
+            );
+        }
+        
+        Console.WriteLine("Debt reports generated");
+    }
+
+    private void GenerateGroupedHotspotPathsReport(
+        int groupingDepth,
+        Dictionary<string, int> mostCommittedResult
+    ) {
         Dictionary<string, int> groupChangeCount = PathGrouper.GetGroupedPaths(
             depth: groupingDepth, 
             mostCommittedResult: mostCommittedResult
@@ -30,25 +62,97 @@ public abstract class DebtCollector {
         foreach (KeyValuePair<string,int> grouping in groupChangeCount) {
             pathGroupingFilesWriter.WriteLine( $"{grouping.Key}, {grouping.Value}" );
         }
-        
-        string mostCommittedFile = mostCommittedResult.First().Key;
-        bool xrayResult = HotspotXray.TryGetXray(
-            repoPath, 
-            mostCommittedFile,
-            out Dictionary<string, long> methodChanges
-        );
-        
-        if( !xrayResult ) {
-            Console.Error.WriteLine( "Xray failed" );
-            return;
+    }
+
+    private void GenerateComplexityReport(
+        string repoPath, 
+        Dictionary<string, int> mostCommittedResult 
+    ) {
+        Console.WriteLine("Getting complexity");
+        IEnumerable<KeyValuePair<string, long>> methodComplexityFromAllHotspotFiles = [];
+        foreach (KeyValuePair<string, int> keyValuePair in mostCommittedResult.Take(50)) {
+            bool complexityResult = ComplexityCalculator.TryCalculateComplexity(
+                repoPath,
+                keyValuePair.Key,
+                out Dictionary<string, long> methodComplexity
+            );
+
+            if (!complexityResult) {
+                Console.Error.WriteLine($"Complexity failed for: {repoPath} : {keyValuePair.Key}");
+            }
+
+            methodComplexityFromAllHotspotFiles = [
+                ..methodComplexityFromAllHotspotFiles,
+                ..methodComplexity
+            ];
         }
-        
-        IEnumerable<KeyValuePair<string, long>> methodChangesFromMostToLeast = methodChanges.OrderBy( m => m.Value ).Reverse();
-        const string xrayFileName = @"xray.csv";
+
+        string complexityFileName = @"complexity.csv";
+        using StreamWriter complexityWriter = new(complexityFileName);
+        complexityWriter.WriteLine($"Key;Complexity");
+        IEnumerable<KeyValuePair<string, long>> orderedMethodComplexityFromAllHotspotFiles =
+            methodComplexityFromAllHotspotFiles.OrderBy(m => m.Value).Reverse();
+        foreach (KeyValuePair<string, long> methodComplexity in orderedMethodComplexityFromAllHotspotFiles) {
+            complexityWriter.WriteLine($"{methodComplexity.Key}; {methodComplexity.Value}");
+        }
+    }
+
+    private void GenerateMethodXrayReport(
+        string repoPath,
+        Dictionary<string, int> mostCommittedResult,
+        int daysSince = 1
+    ) {
+        Console.WriteLine("Getting xray hotspots");
+        IEnumerable<KeyValuePair<string, int>> csFiles = mostCommittedResult.Where(n => n.Key.EndsWith(".cs")).Take(3);
+
+        IEnumerable<KeyValuePair<string, long>> methodChangesFromAllHotspotFiles = [];
+        foreach (KeyValuePair<string,int> file in csFiles) {
+            bool xrayResult = HotspotXray.TryGetXray(
+                repoPath,
+                filePath: file.Key,
+                out Dictionary<string, long> methodChanges,
+                daysSince: daysSince
+            );
+
+            if (!xrayResult) {
+                Console.Error.WriteLine("Xray failed");
+                return;
+            }
+
+            methodChangesFromAllHotspotFiles = [
+                ..methodChangesFromAllHotspotFiles,
+                ..methodChanges
+            ];
+        }
+
+        string xrayFileName = @"xray.csv";
         using StreamWriter xrayWriter = new(xrayFileName);
-        xrayWriter.WriteLine( $"Key, Value" );
-        foreach (KeyValuePair<string, long> methodChange in methodChangesFromMostToLeast) {
-            xrayWriter.WriteLine( $"{methodChange.Key}, {methodChange.Value}" );
+
+        xrayWriter.WriteLine($"Key;Value");
+        IEnumerable<KeyValuePair<string, long>> orderedMethodChangesFromAllHotspotFiles = methodChangesFromAllHotspotFiles.OrderBy(m => m.Value).Reverse();
+        foreach (KeyValuePair<string, long> methodChange in orderedMethodChangesFromAllHotspotFiles) {
+            xrayWriter.WriteLine($"{methodChange.Key};{methodChange.Value}");
         }
+    }
+
+    private Dictionary<string, int> GenerateFileHotspotReport(
+        string repoPath,
+        int daysSince = 1
+    ) {
+        Console.WriteLine("Getting hotspots");
+        Dictionary<string, int> mostCommittedResult = hotspotFinder.GetMostCommittedFiles(
+            repoPath,
+            daysSince: daysSince
+        );
+
+        string mostCommittedFilesFileName = @"mostCommittedFiles.csv";
+        using StreamWriter mostCommittedFilesWriter = new(mostCommittedFilesFileName);
+
+        mostCommittedFilesWriter.WriteLine($"Key;Value");
+        foreach (KeyValuePair<string, int> fileCommitCountEntry in mostCommittedResult) {
+            mostCommittedFilesWriter.WriteLine($"{fileCommitCountEntry.Key};{fileCommitCountEntry.Value}");
+        }
+
+        return mostCommittedResult;
     }
 }
