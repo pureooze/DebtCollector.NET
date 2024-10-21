@@ -45,65 +45,6 @@ public abstract class LongestTimeSinceModified {
             .ToDictionary(fci => fci.FileName, fci => fci.DaysSinceLastCommit);
     }
 
-    // private static Dictionary<string, int> GetFilesWithLastModifiedTime_Old(
-    //     string pathToRepo
-    // ) {
-    //     ProcessStartInfo startInfo = new() {
-    //         FileName = "git",
-    //         Arguments = "log --pretty=format:\"%at %n\" --name-only",
-    //         RedirectStandardOutput = true,
-    //         UseShellExecute = false,
-    //         CreateNoWindow = true,
-    //         WorkingDirectory = pathToRepo
-    //     };
-    //
-    //     Process process = new() {
-    //         StartInfo = startInfo
-    //     };
-    //
-    //     process.Start();
-    //     List<FileCommitInfo> files = [];
-    //
-    //     string? commitDate = null;
-    //
-    //     // Process the output of the Git command
-    //     using (var reader = process.StandardOutput)
-    //     {
-    //         string? line;
-    //         while ((line = reader.ReadLine()) != null)
-    //         {
-    //             if (long.TryParse(line, out long unixTimestamp)) 
-    //             {
-    //                 // This line is a Unix timestamp, set it as the current commit date
-    //                 commitDate = unixTimestamp.ToString();
-    //             }
-    //             else if (!string.IsNullOrWhiteSpace(line) && commitDate != null)
-    //             {
-    //                 // This line is a file name, so add it to the list with the commit date
-    //                 DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(long.Parse(commitDate)).DateTime;
-    //                 files.Add(new FileCommitInfo
-    //                 {
-    //                     FileName = line,
-    //                     DaysSinceLastCommit = dateTime
-    //                 });
-    //             }
-    //         }
-    //     }
-    //
-    //     process.WaitForExit();
-    //
-    //     DateTime now = DateTime.Now;
-    //     // Sort the files by commit date and take the 10 oldest
-    //     Dictionary<string, int> oldestFiles = files
-    //         .GroupBy(f => f.FileName)
-    //         .Select(g => g.First()) // Take the first occurrence (i.e., oldest commit)
-    //         .OrderByDescending(f => f.DaysSinceLastCommit)
-    //         .ToDictionary(fci => fci.FileName, fci => (int)(now - fci.DaysSinceLastCommit).TotalDays);
-    //
-    //     return oldestFiles;
-    // }
-    
-    // Method to run a git command and return the output
     static ImmutableArray<string> RunGitCommand( 
         string pathToRepo,
         string arguments
@@ -121,7 +62,7 @@ public abstract class LongestTimeSinceModified {
         Process process = new Process
         {
             StartInfo = startInfo,
-            EnableRaisingEvents = true        // Enable events
+            EnableRaisingEvents = true
         };
         
         List<string> output = [];
