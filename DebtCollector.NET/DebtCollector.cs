@@ -24,7 +24,7 @@ public class DebtCollector(
             );
         }
         
-        if (modes.Contains("MethodXray")) {
+        if (modes.Contains("methodXray")) {
             GenerateMethodXrayReport(
                 repoPath, 
                 mostCommittedResult, 
@@ -32,14 +32,16 @@ public class DebtCollector(
             );
         }
 
-        if (modes.Contains("Complexity")) {
+        if (modes.Contains("complexity")) {
             GenerateComplexityReport(
                 repoPath, 
                 mostCommittedResult
             );
         }
-
-        GenerateFilesWithTimeSinceModifiedReport(repoPath);
+        
+        if (modes.Contains("lastModified")) {
+            GenerateFilesWithTimeSinceModifiedReport(repoPath);
+        }
         
         Console.WriteLine("Debt reports generated");
     }
