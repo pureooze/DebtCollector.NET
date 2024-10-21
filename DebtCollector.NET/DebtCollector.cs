@@ -38,8 +38,25 @@ public class DebtCollector(
                 mostCommittedResult
             );
         }
+
+        GenerateFilesWithTimeSinceModifiedReport(repoPath);
         
         Console.WriteLine("Debt reports generated");
+    }
+    
+    private void GenerateFilesWithTimeSinceModifiedReport(
+        string repoPath
+    ) {
+        IDictionary<string, int> filesWithTimeSinceModified = 
+            LongestTimeSinceModified.GetFilesWithTimeSinceModified(repoPath);
+        
+        const string pathGroupingFilesFileName = @"filesWithTimeSinceModified.csv";
+        using StreamWriter pathGroupingFilesWriter = new(pathGroupingFilesFileName);
+
+        pathGroupingFilesWriter.WriteLine( $"Key, Value" );
+        foreach (KeyValuePair<string,int> grouping in filesWithTimeSinceModified) {
+            pathGroupingFilesWriter.WriteLine( $"{grouping.Key}, {grouping.Value}" );
+        }
     }
 
     private void GenerateGroupedHotspotPathsReport(
